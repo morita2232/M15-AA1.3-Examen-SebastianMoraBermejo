@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class ObjectPicker : MonoBehaviour
 {
@@ -44,11 +46,17 @@ public class ObjectPicker : MonoBehaviour
     float pickedRbDragLinearOriginal;
     public float pickedRbDragAngular = 100;
     float pickedRbDragAngularOriginal;
+    InputSystem inputs;
 
     void Start()
     {
         if (cam == null)
             cam = Camera.main;
+
+        inputs = new InputSystem();
+        inputs.Enable();
+
+        pickingIconCurrentPos = pickingIcon.transform.position;
     }
 
     // Update is called once per frame
@@ -58,6 +66,10 @@ public class ObjectPicker : MonoBehaviour
         {
             NearestObject();
         }
+
+        
+
+        //pickingIcon.transform.position = Vector2.Lerp(pickingIconCurrentPos, pickedPosition, distanceMax);
 
         HandlePickingUI();
 
@@ -142,13 +154,31 @@ public class ObjectPicker : MonoBehaviour
     }
     void HandlePickingUI()
     {
+        pickingIconCurrentPos = pickedPosition;
+
+
+
+        switch (state)
+        {
+            case PICKSTATE.FAR:
+                pickingIcon.alpha = pickingIconFar;
+                break;
+
+            case PICKSTATE.BLOCKED:
+                pickingIcon.alpha = pickingIconBlocked;
+                break;
+
+            case PICKSTATE.AVAILABLE:
+                pickingIcon.alpha = pickingIconAvailable;
+                break;
+        }
 
     }
 
     void StartPickup()
     {
         if (pickedObject != null || pickableObject == null || state != PICKSTATE.AVAILABLE) return;
-        if (Input.GetMouseButtonDown(0))
+        if (inputs.Player.PickUp.WasPressedThisFrame())
         {
             pickedObject = pickableObject;
             pickableObject = null;
@@ -164,7 +194,7 @@ public class ObjectPicker : MonoBehaviour
     {
         if (pickedObject == null) return;
 
-        distance += Input.mouseScrollDelta.y * scrollSensitivity;
+        distance += inputs.Player.Look.ReadValue<Vector2>().y * scrollSensitivity;
         distance = Mathf.Clamp(distance, distanceMin, distanceMax);
         Vector3 forcepos = pickedObject.transform.TransformPoint(pickedPosition);
         Vector3 targetPos = cam.transform.position + cam.transform.forward * distance;
@@ -176,7 +206,7 @@ public class ObjectPicker : MonoBehaviour
     void EndPickup()
     {
         if (pickedObject == null) return;
-        if (Input.GetMouseButtonUp(0))
+        if (inputs.Player.PickUp.WasCompletedThisFrame())
         {
             pickedObject.rb.linearDamping = pickedRbDragLinearOriginal;
             pickedObject.rb.angularDamping = pickedRbDragAngularOriginal;

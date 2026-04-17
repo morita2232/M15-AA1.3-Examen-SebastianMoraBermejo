@@ -1,14 +1,21 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Windows;
 
 [RequireComponent(typeof(FirstPersonController))]
 public class FirstPersonController_Input : MonoBehaviour
 {
     FirstPersonController controller;
+    InputSystem inputs;
+
     // Start is called before the first frame update
     void Start()
     {
+
+        inputs = new InputSystem();
+        inputs.Enable();
+
         controller = GetComponent<FirstPersonController>();
         //Cursor.lockState = CursorLockMode.Locked;
         //Cursor.visible = false;
@@ -20,10 +27,14 @@ public class FirstPersonController_Input : MonoBehaviour
     }
     private void FixedUpdate()
     {
-        controller.Move(new Vector2(Input.GetAxis("Horizontal"), Input.GetAxis("Vertical")), Time.fixedDeltaTime);
+        Vector2 dir = inputs.Player.Move.ReadValue<Vector2>();
+
+        controller.Move(dir, Time.fixedDeltaTime);
     }
     private void LateUpdate()
     {
-        controller.Look(new Vector2(Input.GetAxis("Mouse X"), Input.GetAxis("Mouse Y")));
+        Vector2 look = inputs.Player.Look.ReadValue<Vector2>();
+
+        controller.Look(new Vector2(look.x, look.y));
     }
 }
